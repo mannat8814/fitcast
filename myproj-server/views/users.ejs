@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User List</title>
+  <style>
+    button, select {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+    #user-list {
+      margin-top: 20px;
+    }
+    li {
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Click the Button to Get Users</h1>
+  
+  <!-- Dropdown to choose the number of users to display -->
+  <label for="num-users">Select number of users to display: </label>
+  <select id="num-users">
+    <option value="5">5</option>
+    <option value="10">10</option>
+    <option value="15">15</option>
+    <option value="20">20</option>
+  </select>
+  
+  <!-- Button to fetch users -->
+  <button id="fetch-users-button">Get Users</button>
+  
+  <!-- This is where we will display the list of users -->
+  <ul id="user-list"></ul>
+
+  <script>
+    // Get the button, number selector, and user list element
+    const button = document.getElementById('fetch-users-button');
+    const numUsersSelect = document.getElementById('num-users');
+    const userList = document.getElementById('user-list');
+
+    // Add event listener to button
+    button.addEventListener('click', function() {
+      // Get the number of users selected
+      const numUsers = numUsersSelect.value;
+      
+      // Fetch users from the API, passing the number of users as a query parameter
+      fetch(`/api/users?limit=${numUsers}`)
+        .then(response => response.json())
+        .then(users => {
+          // Clear the user list before adding new users
+          userList.innerHTML = '';
+
+          // Loop through the users and create a list item for each user
+          users.forEach(user => {
+            const listItem = document.createElement('li');
+            listItem.textContent = `${user.name} - ${user.email}`;  // Display name and email
+            userList.appendChild(listItem);
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching users:', error);
+        });
+    });
+  </script>
+
+</body>
+</html>

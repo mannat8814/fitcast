@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitCast - My Closet</title>
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background-color: #222;
+      padding: 1rem 0;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      font-weight: bold;
+    }
+
+    .navbar a.active {
+      border-bottom: 2px solid white;
+    }
+
+    .closet-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .tab-buttons {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab-btn {
+      padding: 0.75rem 1.5rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #666;
+      position: relative;
+    }
+
+    .tab-btn.active {
+      color: #222;
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background-color: #222;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+      padding-top: 1%;
+      padding-top: 1%;
+    }
+
+    .item-card {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .item-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .item-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .item-info {
+      padding: 1rem;
+    }
+
+    .item-name {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .item-type {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .item-actions {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid #eee;
+  }
+  
+  .delete-btn {
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background-color 0.2s;
+  }
+  
+  .delete-btn:hover {
+    background-color: #cc0000;
+  }
+
+    
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/">Home</a>
+    <a href="/closet" class="active">Closet</a>
+    <a href="/groups">Groups</a>
+    <a href="/settings">Settings</a>
+  </nav>
+
+  <div class="closet-container">
+    <h1>My Closet</h1>
+    
+    <div class="tab-buttons">
+      <button class="tab-btn active" onclick="switchTab('clothing')">Clothing</button>
+      <button class="tab-btn" onclick="switchTab('outfits')">Outfits</button>
+    </div>
+
+    <!-- Clothing Tab -->
+    <div id="clothing" class="tab-content active">
+      <a href="/add_clothes">Add New Clothing Item</a>
+      <div class="items-grid">
+        <% clothing.forEach(item => { %>
+          <div class="item-card">
+            <img src="<%= item.image || 'https://via.placeholder.com/300x200?text=No+Image' %>" 
+                 alt="<%= item.name %>" 
+                 class="item-image">
+            <div class="item-info">
+              <div class="item-type"><%= item.type %></div>
+              <div class="item-color"><%= item.color %></div>
+              <div class="item-material"><%= item.material %></div>
+            </div>
+            <div class="item-actions">
+              <button class="delete-btn" onclick="deleteItem('<%= item.clothingID %>', this)">Delete</button>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+      
+      <!-- <button class="add-item-btn">+ Add New Clothing Item</button> -->
+      
+    </div>
+
+    <!-- Outfits Tab -->
+    <div id="outfits" class="tab-content">
+      <a href="/generate" > Create New Outfit </a>
+      <div class="items-grid">
+        <% fitClothes.forEach(outfit => { %>
+          <div class="item-card">
+            <% outfit.items.forEach(item => {%>
+              <div class="item-info">
+                <div class="item-type"><%= item.type %></div>
+                <div class="item-color"><%= item.color %></div>
+                <div class="item-material"><%= item.material %></div>
+              </div>
+            <% }); %>
+            <div class="item-actions">
+              <div class="item-info">Rating: <%=outfit.rating%>/5</div>
+              <button class="delete-btn" onclick="deleteOutfit('<%= outfit.outfitID %>', this)">Delete Outfit</button>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabName) {
+      event.preventDefault(); 
+      const url = new URL(window.location);
+      url.searchParams.set('tab', tabName);
+      window.location.href = url.toString();
+      
+    }
+
+    
+    async function deleteItem(itemId, buttonElement) {
+      if (!confirm('Are you sure you want to delete this item?')) return;
+      
+      try {
+        const response = await fetch(`/closet/${itemId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          buttonElement.closest('.item-card').remove();
+          alert('Item deleted successfully');
+        } else {
+          throw new Error(data.error || 'Failed to delete item');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert(error.message);
+      }
+    }
+
+    async function deleteOutfit(outfitID, buttonElement) {
+      if (!confirm('Are you sure you want to delete this outfit?')) return;
+      
+      try {
+        const response = await fetch(`/closet/outfits/${outfitID}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          buttonElement.closest('.item-card').remove();
+          alert('Item deleted successfully');
+        } else {
+          throw new Error(data.error || 'Failed to delete item');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert(error.message);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const activeTab = params.get('tab') || 'clothing'; // default to clothing if none
+
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.getElementById(activeTab).classList.add('active');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.trim().toLowerCase() === activeTab) {
+          btn.classList.add('active');
+        }
+      });
+    });
+
+  </script>
+</body>
+</html>

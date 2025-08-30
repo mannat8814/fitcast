@@ -1,0 +1,21 @@
+<h2>Set Your Temperature Preferences</h2>
+<form method="POST" action="/preferences">
+    <input type="hidden" name="userId" value="<%= userId %>"/>
+
+    <p>Range 1: <input type="number" name="temp1_start" value="<%= defaults.temp1_start %>"> to
+        <input type="number" name="temp1_end" value="<%= defaults.temp1_end %>"> °F (Extremely Cold)</p>
+
+    <p>Range 2: <input type="number" name="temp2_start" value="<%= defaults.temp2_start %>"> to
+        <input type="number" name="temp2_end" value="<%= defaults.temp2_end %>"> °F (Cold)</p>
+
+    <p>Range 3: <input type="number" name="temp3_start" value="<%= defaults.temp3_start %>"> to
+        <input type="number" name="temp3_end" value="<%= defaults.temp3_end %>"> °F (Neutral)</p>
+
+    <p>Range 4: <input type="number" name="temp4_start" value="<%= defaults.temp4_start %>"> to
+        <input type="number" name="temp4_end" value="<%= defaults.temp4_end %>"> °F (Warm)</p>
+
+    <p>Range 5: <input type="number" name="temp5_start" value="<%= defaults.temp5_start %>"> to
+        <input type="number" name="temp5_end" value="<%= defaults.temp5_end %>"> °F (Extremely Warm)</p>
+
+    <button type="submit">Save Preferences</button>
+</form>

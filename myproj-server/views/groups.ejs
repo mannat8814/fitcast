@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Groups</title>
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #222;
+            padding: 1rem 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            font-weight: bold;
+        }
+        .navbar a.active {
+            border-bottom: 2px solid white;
+        }
+        .left-panel {
+            width: 65%;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 20px;
+            border-right: 1px solid #ccc;
+            margin-top: 70px; /* Leave space for the navbar */
+        }
+        .right-panel {
+            width: 35%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            margin-top: 70px; /* Leave space for the navbar */
+        }
+        .outfit {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+        .leaderboard {
+            flex-grow: 1;
+        }
+        .manage-link {
+            text-align: center;
+            margin-bottom: 20px; /* Add spacing below the button */
+        }
+        .manage-button {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 5px;
+            background-color: #333;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .manage-button:hover {
+            background-color: #555;
+        }
+        a {
+            text-decoration: none;
+            color: #007BFF;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+      padding-top: 1%;
+    }
+
+    .item-card {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .item-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .item-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .item-info {
+      padding: 1rem;
+    }
+
+    .item-name {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .item-type {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .item-actions {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 1rem;
+        border-top: 1px solid #eee;
+    }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/">Home</a>
+        <a href="/closet">Closet</a>
+        <a href="/groups" class="active">Groups</a>
+        <a href="/settings">Settings</a>
+    </nav>
+    <div class="left-panel">
+        <h2>Outfit Feed</h2>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search by user or clothing...">
+            <select id="groupFilter">
+                <option value="">Filter by group</option>
+                <% groups.forEach(group => { %>
+                    <option value="<%= group.name %>"><%= group.name %></option>
+                <% }) %>
+            </select>
+        </div>
+        <div class="items-grid">
+            <% outfits.forEach(outfit => { %>
+              <div class="item-card"
+                data-user="<%= outfit.userName.toLowerCase() %>" 
+                data-groups="<%= outfit.groups.map(g => g.groupName.toLowerCase()).join(',') %>" 
+                data-clothing="<%= outfit.items.map(i => (i.type + ' ' + i.color + ' ' + i.material)).join(' ').toLowerCase() %>"
+                
+                >
+                
+                <% if (outfit.items && outfit.items.length > 0) { %>
+                  <% outfit.items.forEach(item => { %>
+                    <div class="item-info">
+                      <div class="item-type"><%= item.type %></div>
+                      <div class="item-color"><%= item.color %></div>
+                      <div class="item-material"><%= item.material %></div>
+                    </div>
+                  <% }) %>
+                <% } %>
+          
+                <div class="item-info">
+                  <div><strong>Worn by:</strong> <%= outfit.userName %></div>
+                  <div><strong>Groups:</strong> 
+                    <% if (outfit.groups.length > 0) { %>
+                        <%= outfit.groups.map(g => g.groupName).join(", ") %>
+                    <% } else { %> 
+                        None 
+                    <% } %>
+                  </div>
+                  <div><strong>Temperature:</strong> 
+                    <% if (outfit.temp === 1) { %> Extremely Cold
+                    <% } else if (outfit.temp === 2) { %> Cold
+                    <% } else if (outfit.temp === 3) { %> Neutral
+                    <% } else if (outfit.temp === 4) { %> Warm
+                    <% } else if (outfit.temp === 5) { %> Extremely Warm
+                    <% } else { %> unknown
+                    <% } %>
+                  </div>
+                </div>
+          
+              </div>
+            <% }); %>
+          </div>
+          
+    </div>
+
+    <div class="right-panel">
+        <div class="manage-link">
+            <a href="/groups/manage" class="manage-button">Manage Groups</a>
+        </div>
+
+        <div class="leaderboard">
+            <h2>Leaderboard (Past 7 Days)</h2>
+            <ul id="leaderboard-list">
+                <!-- Leaderboard entries will be dynamically added here -->
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const userID = <%= userId %>; // Replace with the actual userID
+
+        // Fetch leaderboard data from the API
+        fetch(`/api/leaderboard?userID=${userID}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const leaderboardList = document.getElementById('leaderboard-list');
+                leaderboardList.innerHTML = ''; // Clear any existing content
+
+                if (!Array.isArray(data[3])) {
+                    leaderboardList.innerHTML = '<li>Error: Unexpected data format from server.</li>';
+                    return;
+                }
+
+                if (data[3].length === 0) {
+                    leaderboardList.innerHTML = '<li>No leaderboard data available.</li>';
+                    return;
+                }
+
+                // Populate the leaderboard
+                data[3].forEach(entry => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <strong>${entry.groupName}</strong> - ${entry.outfitCount} outfits
+                        <span style="float: right;">Rank: ${entry.rank}</span>
+                    `;
+
+                    // Highlight groups the user is in
+                    if (entry.isUserInGroup) {
+                        listItem.style.backgroundColor = '#f0f8ff'; // Light blue background
+                        listItem.style.fontWeight = 'bold'; // Bold text
+                    }
+
+                    leaderboardList.appendChild(listItem);
+                });
+            })
+            .catch(error => {
+                alert(error.message);
+                console.error('Error fetching leaderboard:', error);
+                const leaderboardList = document.getElementById('leaderboard-list');
+                leaderboardList.innerHTML = '<li>Error loading leaderboard data.</li>';
+            });
+    </script>
+</body>
+</html>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const groupFilter = document.getElementById('groupFilter');
+        const outfitCards = document.querySelectorAll('.item-card');
+    
+        function filterOutfits() {
+            const searchText = searchInput.value.toLowerCase();
+            const selectedGroup = groupFilter.value.toLowerCase();
+    
+            outfitCards.forEach(card => {
+                const userData = card.getAttribute('data-user') || '';
+                const groupData = card.getAttribute('data-groups') || '';
+                const clothingData = card.getAttribute('data-clothing') || '';
+    
+                const matchesSearch = userData.includes(searchText) || clothingData.includes(searchText);
+                const matchesGroup = selectedGroup === '' || groupData.split(',').includes(selectedGroup);
+    
+                if (matchesSearch && matchesGroup) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    
+        searchInput.addEventListener('input', filterOutfits);
+        groupFilter.addEventListener('change', filterOutfits);
+    });
+</script>
+    

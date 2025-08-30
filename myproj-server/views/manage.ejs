@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Groups</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .group {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .group h3 {
+            margin: 0 0 10px 0;
+        }
+        .member-list {
+            margin-left: 20px;
+        }
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        input, select, button {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        #selectedUsers li {
+            list-style: none;
+            background: #f8f8f8;
+            margin: 4px 0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #selectedUsers button {
+            color: red;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <a href="/groups" style="display: inline-block; margin-bottom: 20px; text-decoration: none; color: #007BFF; font-weight: bold;">
+        &larr; Back to Groups
+    </a>
+
+    <h1>Manage Groups</h1>
+
+    <% groups.forEach(group => { %>
+        <div class="group">
+            <h3><%= group.name %></h3>
+            <p><strong>Owner:</strong> <%= group.ownerName %> <% if (group.owner === userId) { %> (You) <% } %></p>
+
+            <p><strong>Members:</strong></p>
+            <ul class="member-list">
+                <% group.members.forEach(member => { %>
+                    <li>
+                        <%= member.name %>
+                        <% if (group.owner === userId && member.userID !== userId) { %>
+                            <form action="/groups/manage/removeMember" method="POST" style="display:inline;">
+                                <input type="hidden" name="groupId" value="<%= group.groupID %>">
+                                <input type="hidden" name="memberId" value="<%= member.userID %>">
+                                <button type="submit">Remove</button>
+                            </form>
+                        <% } %>
+                    </li>
+                <% }) %>
+            </ul>
+
+            <% if (group.owner === userId) { %>
+                <form action="/groups/manage/addMember" method="POST">
+                    <input type="hidden" name="groupId" value="<%= group.groupID %>">
+                
+                    <input type="text" class="userSearch" data-group-id="<%= group.groupID %>" placeholder="Search for users..." autocomplete="off">
+                    <input type="hidden" name="newMemberId" class="selectedUserId" data-group-id="<%= group.groupID %>">
+                    <div class="searchResults" id="searchResults-<%= group.groupID %>" style="border: 1px solid #ccc; max-height: 200px; overflow-y: auto;"></div>
+                    <button type="submit" disabled class="addMemberButton" id="addMemberButton-<%= group.groupID %>">Add Member</button>
+                </form>
+
+                <form action="/groups/manage/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete this group?');">
+                    <input type="hidden" name="groupId" value="<%= group.groupID %>">
+                    <button type="submit" style="color:red;">Delete Group</button>
+                </form>
+            <% } else { %>
+                <p class="disabled">You are not the owner of this group.</p>
+            <% } %>
+        </div>
+    <% }) %>
+
+    <hr>
+
+    <h2>Create New Group</h2>
+
+    <form action="/groups/manage/create" method="POST" id="createGroupForm">
+        <input type="text" name="groupName" placeholder="Group Name" required>
+        <input type="text" id="userSearch" placeholder="Search for users by name..." autocomplete="off">
+        <div id="searchResults" style="border: 1px solid #ccc; max-height: 200px; overflow-y: auto;"></div>
+        <ul id="selectedUsers"></ul>
+        <input type="hidden" name="memberIds" id="memberIds">
+        <button type="submit">Create Group</button>
+    </form>
+
+    <script>
+        function setupSearchFiltering() {
+            // Add member to existing groups
+            document.querySelectorAll('.userSearch').forEach(input => {
+                const groupId = input.dataset.groupId;
+                const resultsDiv = document.getElementById(`searchResults-${groupId}`);
+                const hiddenUserIdInput = document.querySelector(`.selectedUserId[data-group-id="${groupId}"]`);
+                const addMemberButton = document.getElementById(`addMemberButton-${groupId}`);
+    
+                input.addEventListener('input', () => {
+                    const query = input.value.trim();
+                    if (!query) {
+                        resultsDiv.innerHTML = '';
+                        return;
+                    }
+    
+                    fetch(`/groups/manage/searchUser?query=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(users => {
+                            resultsDiv.innerHTML = '';
+                            users.forEach(user => {
+                                const div = document.createElement('div');
+                                div.textContent = `${user.name} (ID: ${user.userID})`;
+                                div.style.cursor = 'pointer';
+                                div.style.padding = '5px';
+                                div.style.borderBottom = '1px solid #eee';
+                                div.addEventListener('mousedown', e => {
+                                    e.preventDefault(); // prevent blur/submission before click fires
+                                    hiddenUserIdInput.value = user.userID;
+                                    input.value = `${user.name}`;
+                                    resultsDiv.innerHTML = '';
+                                    addMemberButton.disabled = false;
+                                });
+                                resultsDiv.appendChild(div);
+                            });
+                        });
+                });
+    
+                // Disable button again if input is changed after selection
+                input.addEventListener('change', () => {
+                    if (!input.value.trim()) {
+                        hiddenUserIdInput.value = '';
+                        addMemberButton.disabled = true;
+                    }
+                });
+            });
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('error') === 'addMemberFailed') {
+                alert('Failed to add member. They may already be in the group or an error occurred.');
+            }
+    
+            // Group creation search + selection
+            const createSearchInput = document.getElementById('userSearch');
+            const createSearchResultsDiv = document.getElementById('searchResults');
+            const createSelectedUsersUl = document.getElementById('selectedUsers');
+            const createMemberIdsInput = document.getElementById('memberIds');
+    
+            let createSelectedMembers = [];
+    
+            createSearchInput.addEventListener('input', () => {
+                const query = createSearchInput.value.trim();
+                if (!query) {
+                    createSearchResultsDiv.innerHTML = '';
+                    return;
+                }
+    
+                fetch(`/groups/manage/searchUser?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(users => {
+                        createSearchResultsDiv.innerHTML = '';
+                        users.forEach(user => {
+                            const div = document.createElement('div');
+                            div.textContent = `${user.name} (ID: ${user.userID})`;
+                            div.style.cursor = 'pointer';
+                            div.style.padding = '5px';
+                            div.style.borderBottom = '1px solid #eee';
+                            div.addEventListener('mousedown', e => {
+                                e.preventDefault();
+                                if (!createSelectedMembers.some(m => m.userID === user.userID)) {
+                                    createSelectedMembers.push(user);
+                                    updateCreateSelectedUsers();
+                                }
+                                createSearchInput.value = '';
+                                createSearchResultsDiv.innerHTML = '';
+                            });
+                            createSearchResultsDiv.appendChild(div);
+                        });
+                    });
+            });
+    
+            function updateCreateSelectedUsers() {
+                createSelectedUsersUl.innerHTML = '';
+                createSelectedMembers.forEach((user, index) => {
+                    const li = document.createElement('li');
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = user.name;
+    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.textContent = '❌';
+                    removeBtn.addEventListener('click', () => {
+                        createSelectedMembers.splice(index, 1);
+                        updateCreateSelectedUsers();
+                    });
+    
+                    li.appendChild(nameSpan);
+                    li.appendChild(removeBtn);
+                    createSelectedUsersUl.appendChild(li);
+                });
+    
+                createMemberIdsInput.value = createSelectedMembers.map(u => u.userID).join(',');
+            }
+        }
+    
+        window.addEventListener('DOMContentLoaded', setupSearchFiltering);
+    </script>
+    
+
+</body>
+</html>

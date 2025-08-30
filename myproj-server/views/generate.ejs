@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitCast - Generated Outfit</title>
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background-color: #222;
+      padding: 1rem 0;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      font-weight: bold;
+    }
+
+    .navbar a.active {
+      border-bottom: 2px solid white;
+    }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: calc(100vh - 70px); /* Leave room for navbar */
+      text-align: center;
+    }
+
+    .title {
+      font-size: 3rem;
+      margin-bottom: 2rem;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .button-group button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      background-color: #333;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .button-group button:hover {
+      background-color: #555;
+    }
+
+    .button-group-button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      background-color: #333;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .button-group-button:hover {
+      background-color: #555;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      min-height: 100vh; 
+    }
+
+    .left, .right {
+      flex: 1;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    .left {
+      background-color: #c6c6c6;
+      border-right: 2px solid #ccc;
+    }
+
+    .right {
+      background-color: #fff;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .weather-info {
+      font-size: 1.2rem;
+    }
+
+    .outfit-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .outfit-list li {
+      background-color: #eee;
+      margin: 0.5rem 0;
+      padding: 0.75rem 1rem;
+      border-radius: 5px;
+    }
+
+    .save-button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      background-color: #333;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .save-button:hover {
+      background-color: #555;
+    }
+
+    .save-button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+    
+    .save-button:disabled + span {
+      margin-left: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/">Home</a>
+    <a href="/closet">Closet</a>
+    <a href="/groups">Groups</a>
+    <a href="/settings">Settings</a>
+  </nav>
+  <script>
+    const apiKey = "<%= apiKey %>";
+    const outfit = <%- JSON.stringify(outfit) %>;
+    const userID = <%= userId %>;
+  </script>
+  <div class="container">
+    <div class="left">
+      <h2>Current Weather</h2>
+      <div id="weather" class="weather-info">
+        Fetching weather...
+      </div>
+    </div>
+    <div class="right">
+      <h2 style="display: flex; align-items: center;">
+        Recommended Outfit
+        <button class="button-group-button" onclick="window.location.reload()" title="Refresh" style="margin-left: 1rem;">
+          &#x21bb;
+        </button>
+        <button id="save-button" class="save-button" onclick="saveOutfit()" style="margin-left: 1rem;">Save Outfit</button>
+      </h2>
+      <ul class="outfit-list">
+        <% if (outfit && outfit.outfit) { %>
+          <% outfit.outfit.forEach(item => { %>
+            <li>
+              <h3>
+                <%= item.type
+                  .split('-')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' - ') %>
+              </h3>
+              <ul>
+                <li><strong>Color:</strong> <%= item.color %></li>
+                <% if (item.secondaryColor) { %>
+                  <li><strong>Secondary Color:</strong> <%= item.secondaryColor %></li>
+                <% } %>
+                <li><strong>Material:</strong> <%= item.material %></li>
+              </ul>
+            </li>
+          <% }) %>
+        <% } else { %>
+          <li>No outfits available.</li>
+        <% } %>
+      </ul>
+    </div>
+  </div>
+  <script>
+    currTemp = 0;
+    async function getWeather(lat, lon) {
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`;
+  
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+  
+        const weatherEl = document.getElementById("weather");
+        weatherEl.innerHTML = `
+          <p><strong>${data.name}</strong></p>
+          <p>${data.weather[0].main} - ${data.weather[0].description}</p>
+          <p>Temp: ${data.main.temp} °F</p>
+        `;
+        currTemp = data.main.temp;
+        try {
+          const outfitRes = await fetch('/api/genOutfit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ temp: data.main.temp, userID: userID })
+          });
+
+          const text = await outfitRes.text(); // get raw text first
+          console.log("Raw outfit response text:", text);
+
+          const outfitData = JSON.parse(text); // manually parse so you can catch bad JSON
+          console.log("Parsed outfit data:", outfitData);
+
+          const outfitList = document.querySelector('.outfit-list');
+          outfitList.innerHTML = '';
+          const recommendedOutfit = outfitData.outfit?.outfit;
+          if (Array.isArray(recommendedOutfit)) {
+            window.recommendedOutfit = recommendedOutfit;
+            recommendedOutfit.forEach(item => {
+              const li = document.createElement('li');
+              const formattedType = item.type
+                .split('-')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' - ');
+              li.innerHTML = `
+                <h3>${formattedType}</h3>
+                <ul>
+                  <li><strong>Color:</strong> ${item.color}</li>
+                  ${item.secondaryColor ? `<li><strong>Secondary Color:</strong> ${item.secondaryColor}</li>` : ''}
+                  <li><strong>Material:</strong> ${item.material}</li>
+                </ul>
+              `;
+              outfitList.appendChild(li);
+            });
+          } else {
+            const li = document.createElement('li');
+            li.textContent = 'No outfits available (you may not have enough suitable clothes).';
+            outfitList.appendChild(li);
+          }
+
+        } catch (err) {
+          console.error("🔥 Error in outfit fetch/render:", err);
+        }
+  
+      } catch (err) {
+        document.getElementById("weather").innerText = "Unable to fetch weather.";
+        console.error(err);
+      }
+    }
+  
+    function getLocationAndFetchWeather() {
+      const defaultLat = 40.1163;
+      const defaultLon = -88.2435;
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            const { latitude, longitude } = position.coords;
+            getWeather(latitude, longitude);
+          },
+          () => {
+            // If location access is denied, use default coordinates
+            console.warn("Location access denied. Using default coordinates.");
+            getWeather(defaultLat, defaultLon);
+          }
+        );
+      } else {
+        // If geolocation is not supported, use default coordinates
+        console.warn("Geolocation not supported. Using default coordinates.");
+        getWeather(defaultLat, defaultLon);
+      }
+    }
+
+    window.onload = getLocationAndFetchWeather;
+  
+    function saveOutfit() {
+      const rating = prompt(`Please rate this outfit 1-5:`, "3");
+      if (rating === null || isNaN(rating) || rating < 1 || rating > 5) {
+        alert("Invalid rating.");
+        return;
+      }
+      const outfitData = {
+        userID: userID,
+        clothing: window.recommendedOutfit.map(item => item.clothingID),
+        rating: parseInt(rating),
+        temperature: currTemp
+      };
+      fetch('/api/saveOutfit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(outfitData)
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            alert(data.error);
+          } else if (data.success) {
+            console.log('Outfit saved successfully with rating', rating);
+            const saveButton = document.getElementById('save-button');
+            saveButton.disabled = true;
+            saveButton.insertAdjacentHTML('afterend', ' <span style="color: gray;">\t&#10004; Saved</span>');
+          } else {
+            alert('Unexpected response from server.');
+          }
+        })
+        .catch(err => {
+          console.error('Error saving outfit:', err);
+          alert('An error occurred while saving the outfit.');
+        });
+    }
+  </script>
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Clothes</title>
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+    }
+    .navbar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background-color: #222;
+      padding: 1rem 0;
+    }
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      font-weight: bold;
+    }
+    .navbar a.active {
+      border-bottom: 2px solid white;
+    }
+    .main {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      height: calc(100vh - 70px); /* Leave room for navbar */
+      text-align: left;
+      padding: 3rem 2rem; /* More room between navbar and title */
+    }
+    .title {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    select, input, button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: white;
+      cursor: pointer;
+    }
+    button {
+      background-color: #333;
+      color: white;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #555;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/">Home</a>
+    <a href="/closet">Closet</a>
+    <a href="/groups">Groups</a>
+    <a href="/settings">Settings</a>
+  </nav>
+  <div class="main">
+    <div class="title">Add Clothes</div>
+    <form action="/add_clothes" method="POST">
+      <div class="form-group">
+        <label for="type">Type</label>
+        <select name="type" id="type" required>
+          <% ["top-tshirt", "top-sweater", "top-tanktop", "top-longsleeve", "top-buttondown",
+              "top-jacket", "top-windbreaker", "hat-baseball", "hat-beanie", "bottoms-jeans",
+              "bottoms-sweatpants", "bottoms-shorts", "bottoms-formal", "shoes-sneakers",
+              "shoes-boots", "shoes-formal"].forEach(type => { %>
+            <option value="<%= type %>"><%= type %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="material">Material</label>
+        <select name="material" id="material" required>
+          <% ["leather", "cotton", "polyester", "mixedblend", "denim", "spandex"].forEach(material => { %>
+            <option value="<%= material %>"><%= material %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="tempMin">Minimum Temperature</label>
+        <select name="tempMin" id="tempMin" required>
+          <option value="1">1 - Extreme Cold</option>
+          <option value="2">2 - Cold</option>
+          <option value="3">3 - Neutral</option>
+          <option value="4">4 - Hot</option>
+          <option value="5">5 - Extreme Hot</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="tempMax">Maximum Temperature</label>
+        <select name="tempMax" id="tempMax" required>
+          <option value="1">1 - Extreme Cold</option>
+          <option value="2">2 - Cold</option>
+          <option value="3">3 - Neutral</option>
+          <option value="4">4 - Hot</option>
+          <option value="5">5 - Extreme Hot</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="color">Primary Color</label>
+        <select name="color" id="color" required>
+          <% ["red", "orange", "yellow", "green", "blue", "purple", "black", "white", "gray"].forEach(color => { %>
+            <option value="<%= color %>"><%= color %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="secondaryColor">Secondary Color</label>
+        <select name="secondaryColor" id="secondaryColor">
+          <option value="">None</option>
+          <% ["red", "orange", "yellow", "green", "blue", "purple", "black", "white", "gray"].forEach(color => { %>
+            <option value="<%= color %>"><%= color %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="waterproof">Waterproof</label>
+        <select name="waterproof" id="waterproof" required>
+          <option value="1">Yes</option>
+          <option value="0">No</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="image">Image Link</label>
+        <input type="text" name="image" id="image" placeholder="Enter image URL" />
+      </div>
+      <button type="submit">Add Clothes</button>
+    </form>
+  </div>
+</body>
+</html>

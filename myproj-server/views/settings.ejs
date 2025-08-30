@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitCast</title>
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+    }
+    .navbar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background-color: #222;
+      padding: 1rem 0;
+    }
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      font-weight: bold;
+    }
+    .navbar a.active {
+      border-bottom: 2px solid white;
+    }
+    .main {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      height: calc(100vh - 70px); /* Leave room for navbar */
+      text-align: left;
+      padding: 3rem 2rem; /* More room between navbar and title */
+    }
+    .title {
+      font-size: 3rem;
+      margin-bottom: 1rem; /* Less room between title and preferences */
+    }
+    .button-group {
+      display: flex;
+      gap: 1rem;
+    }
+    .button-group button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      background-color: #333;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .button-group button:hover {
+      background-color: #555;
+    }
+    #delete-account-button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      background-color: #ff3333;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #delete-account-button:hover {
+      background-color: #cc0000;
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/">Home</a>
+    <a href="/closet">Closet</a>
+    <a href="/groups">Groups</a>
+    <a href="/settings"  class="active">Settings</a>
+  </nav>
+  <div class="main">
+    <div class="title">Settings</div>
+    <div class="button-group">
+      <form action="/preferences" method="post">
+        <input type="hidden" name="userId" value="<%= userId %>"/>
+        <p>Range 1: <input type="number" name="temp1_start" value="<%= defaults.temp1_start %>"> to
+          <input type="number" name="temp1_end" value="<%= defaults.temp1_end %>"> °F (Extremely Cold)</p>
+
+        <p>Range 2: <input type="number" name="temp2_start" value="<%= defaults.temp2_start %>"> to
+          <input type="number" name="temp2_end" value="<%= defaults.temp2_end %>"> °F (Cold)</p>
+
+        <p>Range 3: <input type="number" name="temp3_start" value="<%= defaults.temp3_start %>"> to
+          <input type="number" name="temp3_end" value="<%= defaults.temp3_end %>"> °F (Neutral)</p>
+
+        <p>Range 4: <input type="number" name="temp4_start" value="<%= defaults.temp4_start %>"> to
+          <input type="number" name="temp4_end" value="<%= defaults.temp4_end %>"> °F (Warm)</p>
+
+        <p>Range 5: <input type="number" name="temp5_start" value="<%= defaults.temp5_start %>"> to
+          <input type="number" name="temp5_end" value="<%= defaults.temp5_end %>"> °F (Extremely Warm)</p>
+
+        <button type="submit">Save Preferences</button>
+      </form>
+    </div>
+    <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+      <button type="button" id="delete-account-button" onclick="deleteAccount()">Delete Account</button>
+      <button type="button" style="padding: 0.75rem 1.5rem; font-size: 1rem; border: none; border-radius: 5px; background-color: gray; color: white; cursor: pointer;" onclick="window.location.href='/logout'">Logout</button>
+    </div>
+  </div>
+  <script>
+    function deleteAccount() {
+      const confirm1 = confirm("Are you sure you want to delete your account? This action is irreversible.");
+      if (confirm1) {
+        const confirm2 = confirm("Are you really sure? This will delete all your data.");
+        if (confirm2) {
+          const confirm3 = confirm("Are you absolutely positive?");
+          if (confirm3) {
+            const confirm4 = confirm("No going back.");
+            if (confirm4) {
+              const confirm5 = confirm("Last chance to cancel.");
+              if (confirm5) {
+                console.log("Deleting account...");
+                const userId = <%= JSON.stringify(userId) %>;
+                fetch('/api/deleteUser', {
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: userId }),
+                })
+                  .then(res => res.json())
+                  .then(data => {
+                    if (data.error) {
+                      alert(data.error);
+                    } else if (data.message === 'User deleted successfully') {
+                      console.log('Account deleted successfully');
+                      window.location.href = '/logout';
+                    } else {
+                      alert('Unexpected response from server.');
+                    }
+                  })
+                  .catch(err => {
+                    console.error('Error deleting account:', err);
+                    alert('An error occurred while deleting the account.');
+                  });
+              }
+            }
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>
